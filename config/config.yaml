@@ -1,5 +1,5 @@
 ---
-workdir:  "/zfs/scratch/mgalland_temp/freebayes/"
+workdir:  "temp/"
 fastqdir: "fastq/"
 resultdir: "results/"
 

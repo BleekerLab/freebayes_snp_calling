@@ -213,8 +213,8 @@ rule uncompress:
         reverse = WORKING_DIR + "trimmed/{sample}_{unit}_reverse.fastq"
     message:"uncompressing {wildcards.sample} {wildcards.unit} reads"
     shell:
-        "zcat {input.forward} > {output.forward};"
-        "zcat {input.reverse} > {output.reverse}"
+        "gzip -cd {input.forward} > {output.forward};"
+        "gzip -cd {input.reverse} > {output.reverse}"
 
 rule bwa_index:
     input:
@@ -248,7 +248,7 @@ rule fastp:
     log:
         RESULT_DIR + "fastp/{sample}_{unit}.log.txt"
     params:
-        sampleName = "{sample}_{unit}",
+        sampleName = "{sample}",
         qualified_quality_phred = config["fastp"]["qualified_quality_phred"]
     run:
         if sample_is_single_end(params.sampleName):
