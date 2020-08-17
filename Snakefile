@@ -122,7 +122,7 @@ rule call_variants:
     message:"calling variants for {wildcards.sample}"
     threads: 10
     shell:
-        "freebayes -f {input.ref} {input.bam} |vcffilter -f 'QUAL > 20' > {output}"   
+        "freebayes -f {input.ref} {input.bam} > {output}"   
 
 ##############################
 # Merge BAMs from same library
