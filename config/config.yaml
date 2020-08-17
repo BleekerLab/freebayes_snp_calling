@@ -1,0 +1,24 @@
+---
+workdir:  "/zfs/scratch/mgalland_temp/freebayes/"
+fastqdir: "fastq/"
+resultdir: "results/"
+
+# units to samples tsv file
+units: "config/units.tsv"
+        
+# read quality trimming
+fastp:
+  qualified_quality_phred: 30 # Phred+33 score (> 15 for Proton Ion, > 30 or more for Illumina) 
+
+ 
+## Genomic references, annotations and aligner indexes
+refs:
+  genome:  "config/refs/S_lycopersicum_chromosomes.4.00.chrom1.fa"
+  #gff:     "/home/mgalland/data/02_refs/Solanum_lycopersicum/ITAG3.2/ITAG4.0_gene_models.gff"
+  #gtf:     "/home/mgalland/data/02_refs/Solanum_lycopersicum/ITAG3.0/ITAG4.0_gene_models.gtf"
+  #star:    "/home/mgalland/data/02_refs/Solanum_lycopersicum/ITAG3.0/star_genome/"
+  #bowtie:  "/home/mgalland/data/02_refs/Solanum_lycopersicum/ITAG3.0/bowtie_index/S_lycopersicum_chromosomes.4.00.fa"
+  #chromsizes: "/home/mgalland/data/02_refs/Solanum_lycopersicum/ITAG3.0/chromSizes.txt" # for bedgraph to bigwig conversion
+
+
+
