@@ -24,7 +24,7 @@ WORKING_DIR = config["workdir"]
 RESULT_DIR = config["resultdir"]
 
 wildcard_constraints:
-  sample="[A-Za-z]"
+  sample="[A-Za-z0-9]"
 wildcard_constraints:
   unit="L[0-9]"
 
