@@ -46,20 +46,13 @@ wildcard_constraints:
 # Helper functions
 ##################
 
-def sample_is_single_end(sample):
-    """This function detect missing value in the column 2 of the units.tsv"""
-    if "fq2" not in samples.columns:
-        return True
-    else:
-        return pd.isnull(samples.loc[(sample), "fq2"])
+def is_single_end(sample, unit):
+    """Return True if sample-unit is single end."""
+    return pd.isnull(units.loc[(sample, unit), "fq2"])
 
 def get_fastq(wildcards):
-    """ This function checks if the sample has paired end or single end reads
-    and returns 1 or 2 names of the fastq files """
-    if sample_is_single_end(wildcards.sample):
-        return units.loc[(wildcards.sample, wildcards.unit), ["fq1"]].dropna()
-    else:
-        return units.loc[(wildcards.sample, wildcards.unit), ["fq1","fq2"]].dropna()
+     """Get fastq files of given sample-unit."""
+     return units.loc[(wildcards.sample, wildcards.unit), ["fq1","fq2"]].dropna()
 
 
 def merge_bams(wildcards):
@@ -248,10 +241,11 @@ rule fastp:
     log:
         RESULT_DIR + "fastp/{sample}_{unit}.log.txt"
     params:
-        sampleName = "{sample}",
+        sample_name = "{sample}",
+        unit_name = "{unit}",
         qualified_quality_phred = config["fastp"]["qualified_quality_phred"]
     run:
-        if sample_is_single_end(params.sampleName):
+        if is_single_end(wildcards.sample, wildcards.unit):
             shell("fastp --thread {threads}  --html {output.html} --json {output.json} \
             --qualified_quality_phred {params.qualified_quality_phred} \
             --in1 {input} --out1 {output} \
