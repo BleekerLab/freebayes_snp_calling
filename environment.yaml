@@ -5,7 +5,8 @@ channels:
   - r
   - defaults
 dependencies:
-  - picard = 2.23.3 
+  - picard=2.23.3 
+  - openjdk=9.0.7  
   - bioconda::samtools=1.9
   - snakemake=5.3.0
   - bwa=0.7.17
