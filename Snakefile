@@ -139,7 +139,7 @@ rule mark_duplicate:
     input:
         WORKING_DIR + "mapped/{sample}_{unit}.sorted.bam"
     output:
-        WORKING_DIR + "mapped/{sample}_{unit}.sorted.dedup.bam"
+        temp(WORKING_DIR + "mapped/{sample}_{unit}.sorted.dedup.bam")
     message:"marking duplicates in {wildcards.sample} {wildcards.unit} bam file"
     log:
         RESULT_DIR + "logs/picard/{sample}.{unit}.metrics.txt"
@@ -155,25 +155,11 @@ rule samtools_sort:
     input:
         WORKING_DIR + "mapped/{sample}_{unit}.bam"
     output:
-        WORKING_DIR + "mapped/{sample}_{unit}.sorted.bam"
+        temp(WORKING_DIR + "mapped/{sample}_{unit}.sorted.bam")
     message:"sorting {wildcards.sample} {wildcards.unit} bam file"
     threads: 5
     shell:
         "samtools sort -@ {threads} {input} > {output}"
-
-# TODO: check if read_group assignment works with BWA MEM
-# TODO: if it does not work, try to replace it with Picard
-#rule add_read_groups:
-#    input:
-#       WORKING_DIR + "mapped/{sample}_{unit}.bam"
-#    output:
-#       WORKING_DIR + "mapped/{sample}_{unit}.rg.bam"
-#    message:"adding read group to {input}"
-#    shell:
-#        "picard AddOrReplaceReadGroups "
-#        "I={input} "
-#        "O={output}
-#
  
 
 rule bwa_align:
@@ -182,7 +168,7 @@ rule bwa_align:
         forward = WORKING_DIR + "trimmed/{sample}_{unit}_forward.fastq",
         reverse = WORKING_DIR + "trimmed/{sample}_{unit}_reverse.fastq"
     output:
-        WORKING_DIR + "mapped/{sample}_{unit}.bam"
+        temp(WORKING_DIR + "mapped/{sample}_{unit}.bam")
     message:"mapping {wildcards.sample} {wildcards.unit} reads to genomic reference"
     params:
         db_prefix = WORKING_DIR + "index/genome"
@@ -202,8 +188,8 @@ rule uncompress:
         forward = WORKING_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
         reverse = WORKING_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"
     output:
-        forward = WORKING_DIR + "trimmed/{sample}_{unit}_forward.fastq",
-        reverse = WORKING_DIR + "trimmed/{sample}_{unit}_reverse.fastq"
+        forward = temp(WORKING_DIR + "trimmed/{sample}_{unit}_forward.fastq"),
+        reverse = temp(WORKING_DIR + "trimmed/{sample}_{unit}_reverse.fastq")
     message:"uncompressing {wildcards.sample} {wildcards.unit} reads"
     shell:
         "gzip -cd {input.forward} > {output.forward};"
@@ -232,8 +218,8 @@ rule fastp:
     input:
         get_fastq
     output:
-        fq1  = WORKING_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
-        fq2  = WORKING_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz",
+        fq1  = temp(WORKING_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz"),
+        fq2  = temp(WORKING_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"),
         html = RESULT_DIR + "fastp/{sample}_{unit}.html",
         json = RESULT_DIR + "fastp/{sample}_{unit}.json"
     message:"trimming {wildcards.sample} reads from {wildcards.unit}"
