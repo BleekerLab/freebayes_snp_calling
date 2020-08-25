@@ -1,10 +1,7 @@
-# Snakemake workflow: freebayes_snp_calling
+# Snakemake SNP calling using freebayes
 
 [![Snakemake](https://img.shields.io/badge/snakemake-≥5.7.0-brightgreen.svg)](https://snakemake.bitbucket.io)
 [![Build Status](https://travis-ci.org/snakemake-workflows/freebayes_snp_calling.svg?branch=master)](https://travis-ci.org/snakemake-workflows/freebayes_snp_calling)
-
-This is the template for a new Snakemake workflow. Replace this text with a comprehensive description covering the purpose and domain.
-Insert your code into the respective folders, i.e. `scripts`, `rules`, and `envs`. Define the entry point of the workflow in the `Snakefile` and the main configuration in the `config.yaml` file.
 
 A Snakemake pipeline to call variants (SNPs, InDels) from DNA-seq Illumina fastq files. 
 
