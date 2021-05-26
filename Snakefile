@@ -183,6 +183,7 @@ rule bwa_align:
         READ_GROUP = SEQUENCER_ID + "." + FLOWCELL_NAME + "." + FLOWCELL_LANE + "." + BARCODE
         shell("bwa mem -v 1 -t {threads} -R '@RG\\tID:{READ_GROUP}\\tPL:ILLUMINA\\tLB:{wildcards.unit}\\tSM:{wildcards.sample}' {params.db_prefix} {input.forward} {input.reverse} >{output}")
 
+
 rule uncompress:
     input:
         forward = WORKING_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
@@ -191,9 +192,12 @@ rule uncompress:
         forward = temp(WORKING_DIR + "trimmed/{sample}_{unit}_forward.fastq"),
         reverse = temp(WORKING_DIR + "trimmed/{sample}_{unit}_reverse.fastq")
     message:"uncompressing {wildcards.sample} {wildcards.unit} reads"
-    shell:
-        "gzip -cd {input.forward} > {output.forward};"
-        "gzip -cd {input.reverse} > {output.reverse}"
+    run:
+        if is_single_end(wildcards.sample, wildcards.unit):
+            shell("gzip -cd {input.forward} > {output.forward};touch {output.reverse}")
+        else:
+            shell("gzip -cd {input.forward} > {output.forward}")
+            shell("gzip -cd {input.reverse} > {output.reverse}")
 
 rule bwa_index:
     input:
