@@ -1,7 +1,9 @@
 ---
-workdir:  "temp/"
-fastqdir: "fastq/"
-resultdir: "results/"
+tempdir: "temp/"                # where to store temporary files like trimmed fastq files
+remove_workdir: TRUE             # turn to FALSE to remove it at the end of the analysis 
+resultdir: "results/"            # directory with all results
+
+
 
 # units to samples tsv file
 units: "config/units.tsv"

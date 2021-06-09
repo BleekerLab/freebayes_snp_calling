@@ -20,7 +20,7 @@ from helpers import get_fastq_file_name
 #############################
 configfile: "config/config.yaml"
 
-WORKING_DIR = config["workdir"]
+TEMP_DIR = config["tempdir"]
 RESULT_DIR = config["resultdir"]
 
 wildcard_constraints:
@@ -57,7 +57,7 @@ def get_fastq(wildcards):
 
 def merge_bams(wildcards):
     "collects all bams files corresponding to the same library"
-    bam_files = glob(WORKING_DIR + "mapped/" + wildcards.sample + "_" + "L[0-9]+\.sorted.dedup.bam")
+    bam_files = glob(TEMP_DIR + "mapped/" + wildcards.sample + "_" + "L[0-9]+\.sorted.dedup.bam")
     return bam_files
 
 
@@ -69,21 +69,31 @@ QC = expand(RESULT_DIR + "fastp/{sample}_{unit}.html",
     sample=SAMPLES, 
     unit=UNITS)
 
-BAMS = expand(WORKING_DIR + "mapped/{sample}_{unit}.bam",
+BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
     sample=SAMPLES,
     unit=UNITS)
 
 VCFs = expand(RESULT_DIR + "vcf/{sample}.vcf",
     sample=SAMPLES)
 
-rule all:
-    input:
-        QC,
-        BAMS,
-        VCFs
-    message:"all done! Cleaning working directory"
-    shell:
-        "rm -r {WORKING_DIR}"
+if config["remove_workdir"]:
+    rule all:
+        input:
+            QC,
+            BAMS,
+            VCFs
+        message:"all done! Cleaning working directory"
+        shell:
+            "rm -r {TEMP_DIR}"
+else: 
+    rule all:
+        input:
+            QC,
+            BAMS,
+            VCFs
+        message:"All done! Keeping temporary directory"
+        shell:
+            ""
   
 ###################
 # Save master files
@@ -124,7 +134,7 @@ rule call_variants:
 rule merge_bams:
     input:
         #merge_bams
-        expand(WORKING_DIR + "mapped/{{sample}}_{unit}.sorted.dedup.bam",unit=UNITS)
+        expand(TEMP_DIR + "mapped/{{sample}}_{unit}.sorted.dedup.bam",unit=UNITS)
     output:
         RESULT_DIR + "mapped/{sample}.bam"
     message:"merging all BAM files for {wildcards.sample}"
@@ -137,9 +147,9 @@ rule merge_bams:
 ##########################################
 rule mark_duplicate:
     input:
-        WORKING_DIR + "mapped/{sample}_{unit}.sorted.bam"
+        TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam"
     output:
-        temp(WORKING_DIR + "mapped/{sample}_{unit}.sorted.dedup.bam")
+        temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.dedup.bam")
     message:"marking duplicates in {wildcards.sample} {wildcards.unit} bam file"
     log:
         RESULT_DIR + "logs/picard/{sample}.{unit}.metrics.txt"
@@ -153,9 +163,9 @@ rule mark_duplicate:
 
 rule samtools_sort:
     input:
-        WORKING_DIR + "mapped/{sample}_{unit}.bam"
+        TEMP_DIR + "mapped/{sample}_{unit}.bam"
     output:
-        temp(WORKING_DIR + "mapped/{sample}_{unit}.sorted.bam")
+        temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam")
     message:"sorting {wildcards.sample} {wildcards.unit} bam file"
     threads: 5
     shell:
@@ -164,14 +174,14 @@ rule samtools_sort:
 
 rule bwa_align:
     input:
-        index = [WORKING_DIR + "index/genome." + ext for ext in ["amb","ann","pac","sa","bwt"]],
-        forward = WORKING_DIR + "trimmed/{sample}_{unit}_forward.fastq",
-        reverse = WORKING_DIR + "trimmed/{sample}_{unit}_reverse.fastq"
+        index = [TEMP_DIR + "index/genome." + ext for ext in ["amb","ann","pac","sa","bwt"]],
+        forward = TEMP_DIR + "trimmed/{sample}_{unit}_forward.fastq",
+        reverse = TEMP_DIR + "trimmed/{sample}_{unit}_reverse.fastq"
     output:
-        temp(WORKING_DIR + "mapped/{sample}_{unit}.bam")
+        temp(TEMP_DIR + "mapped/{sample}_{unit}.bam")
     message:"mapping {wildcards.sample} {wildcards.unit} reads to genomic reference"
     params:
-        db_prefix = WORKING_DIR + "index/genome"
+        db_prefix = TEMP_DIR + "index/genome"
     threads: 10
     run:
         # Building the read group id (sequencer_id + flowcell_name + lane_number + barcode)
@@ -186,11 +196,11 @@ rule bwa_align:
 
 rule uncompress:
     input:
-        forward = WORKING_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
-        reverse = WORKING_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"
+        forward = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
+        reverse = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"
     output:
-        forward = temp(WORKING_DIR + "trimmed/{sample}_{unit}_forward.fastq"),
-        reverse = temp(WORKING_DIR + "trimmed/{sample}_{unit}_reverse.fastq")
+        forward = temp(TEMP_DIR + "trimmed/{sample}_{unit}_forward.fastq"),
+        reverse = temp(TEMP_DIR + "trimmed/{sample}_{unit}_reverse.fastq")
     message:"uncompressing {wildcards.sample} {wildcards.unit} reads"
     run:
         if is_single_end(wildcards.sample, wildcards.unit):
@@ -203,14 +213,14 @@ rule bwa_index:
     input:
         genome = config["refs"]["genome"]
     output:
-        WORKING_DIR + "index/genome.amb",
-        WORKING_DIR + "index/genome.ann",
-        WORKING_DIR + "index/genome.pac",
-        WORKING_DIR + "index/genome.sa",
-        WORKING_DIR + "index/genome.bwt" 
+        TEMP_DIR + "index/genome.amb",
+        TEMP_DIR + "index/genome.ann",
+        TEMP_DIR + "index/genome.pac",
+        TEMP_DIR + "index/genome.sa",
+        TEMP_DIR + "index/genome.bwt" 
     message:"building BWA index for the genomic reference"
     params:
-        db_prefix = WORKING_DIR + "index/genome"
+        db_prefix = TEMP_DIR + "index/genome"
     shell:
         "bwa index -p {params.db_prefix} {input}"
 
@@ -222,8 +232,8 @@ rule fastp:
     input:
         get_fastq
     output:
-        fq1  = temp(WORKING_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz"),
-        fq2  = temp(WORKING_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"),
+        fq1  = temp(TEMP_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz"),
+        fq2  = temp(TEMP_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"),
         html = RESULT_DIR + "fastp/{sample}_{unit}.html",
         json = RESULT_DIR + "fastp/{sample}_{unit}.json"
     message:"trimming {wildcards.sample} reads from {wildcards.unit}"
