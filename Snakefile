@@ -92,8 +92,6 @@ else:
             BAMS,
             VCFs
         message:"All done! Keeping temporary directory"
-        shell:
-            ""
   
 ###################
 # Save master files
@@ -109,7 +107,8 @@ rule copy_master_files:
         RESULT_DIR + "config.yaml",
         RESULT_DIR + "units.tsv",
         RESULT_DIR + "environment.yaml"
-    message:"copying master files"
+    message:
+        "copying master files"
     shell:
          "copy {input} {RESULT_DIR}"
 
@@ -122,7 +121,8 @@ rule call_variants:
         bam = RESULT_DIR + "mapped/{sample}.bam"
     output:
         RESULT_DIR + "vcf/{sample}.vcf"
-    message:"calling variants for {wildcards.sample}"
+    message:
+        "calling variants for {wildcards.sample}"
     threads: 10
     shell:
         "freebayes -f {input.ref} {input.bam} > {output}"   
@@ -133,11 +133,11 @@ rule call_variants:
 
 rule merge_bams:
     input:
-        #merge_bams
         expand(TEMP_DIR + "mapped/{{sample}}_{unit}.sorted.dedup.bam",unit=UNITS)
     output:
         RESULT_DIR + "mapped/{sample}.bam"
-    message:"merging all BAM files for {wildcards.sample}"
+    message:
+        "merging all BAM files for {wildcards.sample}"
     shell:
         "samtools merge {output} {input}"
 
@@ -149,8 +149,9 @@ rule mark_duplicate:
     input:
         TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam"
     output:
-        temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.dedup.bam")
-    message:"marking duplicates in {wildcards.sample} {wildcards.unit} bam file"
+        TEMP_DIR + "mapped/{sample}_{unit}.sorted.dedup.bam"
+    message:
+        "marking duplicates in {wildcards.sample} {wildcards.unit} bam file"
     log:
         RESULT_DIR + "logs/picard/{sample}.{unit}.metrics.txt"
     shell:
@@ -165,7 +166,7 @@ rule samtools_sort:
     input:
         TEMP_DIR + "mapped/{sample}_{unit}.bam"
     output:
-        temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam")
+        TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam"
     message:"sorting {wildcards.sample} {wildcards.unit} bam file"
     threads: 5
     shell:
@@ -178,7 +179,7 @@ rule bwa_align:
         forward = TEMP_DIR + "trimmed/{sample}_{unit}_forward.fastq",
         reverse = TEMP_DIR + "trimmed/{sample}_{unit}_reverse.fastq"
     output:
-        temp(TEMP_DIR + "mapped/{sample}_{unit}.bam")
+        TEMP_DIR + "mapped/{sample}_{unit}.bam"
     message:"mapping {wildcards.sample} {wildcards.unit} reads to genomic reference"
     params:
         db_prefix = TEMP_DIR + "index/genome"
@@ -232,8 +233,8 @@ rule fastp:
     input:
         get_fastq
     output:
-        fq1  = temp(TEMP_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz"),
-        fq2  = temp(TEMP_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"),
+        fq1  = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
+        fq2  = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz",
         html = RESULT_DIR + "fastp/{sample}_{unit}.html",
         json = RESULT_DIR + "fastp/{sample}_{unit}.json"
     message:"trimming {wildcards.sample} reads from {wildcards.unit}"
