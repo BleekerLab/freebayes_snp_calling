@@ -233,11 +233,13 @@ rule fastp:
     params:
         sample_name = "{sample}",
         unit_name = "{unit}",
-        qualified_quality_phred = config["fastp"]["qualified_quality_phred"]
+        qualified_quality_phred = config["fastp"]["qualified_quality_phred"],
+        maximum_read_length = config["fastp"]["maximum_length"]
     run:
         if is_single_end(wildcards.sample, wildcards.unit):
             shell("fastp --thread {threads}  --html {output.html} --json {output.json} \
             --qualified_quality_phred {params.qualified_quality_phred} \
+            --max_len1 {params.maximum_read_length} \
             --in1 {input} --out1 {output} \
             2> {log}; \
             touch {output.fq2}")
@@ -245,5 +247,7 @@ rule fastp:
             shell("fastp --thread {threads}  --html {output.html} --json {output.json} \
             --qualified_quality_phred {params.qualified_quality_phred} \
             --detect_adapter_for_pe \
+            --max_len1 {params.maximum_read_length} \
+            --max_len2 {params.maximum_read_length} \
             --in1 {input[0]} --in2 {input[1]} --out1 {output.fq1} --out2 {output.fq2}; \
             2> {log}")

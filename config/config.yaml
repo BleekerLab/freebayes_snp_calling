@@ -9,6 +9,8 @@ units: "config/units.tsv"
 # read quality trimming
 fastp:
   qualified_quality_phred: 30 # Phred+33 score (> 15 for Proton Ion, > 30 or more for Illumina) 
+  maximum_length: 100         # global trimming option to a specified maximum length. Same for both paired reads.
+
 
  
 ## Genomic references, annotations and aligner indexes
