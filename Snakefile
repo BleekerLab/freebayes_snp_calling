@@ -73,15 +73,16 @@ BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
     sample=SAMPLES,
     unit=UNITS)
 
-VCFs = expand(RESULT_DIR + "vcf/{sample}.vcf",
-    sample=SAMPLES)
+VCFs = expand(RESULT_DIR + "vcf/{sample}.vcf", sample=SAMPLES)
+GLOBAL_VCF  = RESULT_DIR + "all_variants.vcf.gz"
 
 if config["remove_workdir"]:
     rule all:
         input:
             QC,
             BAMS,
-            VCFs
+            VCFs,
+            GLOBAL_VCF
         message:"all done! Cleaning working directory"
         shell:
             "rm -r {TEMP_DIR}"
@@ -90,7 +91,8 @@ else:
         input:
             QC,
             BAMS,
-            VCFs
+            VCFs,
+            GLOBAL_VCF 
         message:"All done! Keeping temporary directory"
   
 ###################
@@ -112,9 +114,57 @@ rule copy_master_files:
     shell:
          "copy {input} {RESULT_DIR}"
 
-##############################
+##########################
 # Call SNPs with freebayes
-##############################
+##########################
+
+if len(SAMPLES) == 1: # only one sample
+    rule merge_variants:
+        input:
+            vcf = expand(RESULT_DIR + "vcf/{sample}.vcf.gz", sample = SAMPLES),
+            index = expand(RESULT_DIR + "vcf/{sample}.vcf.gz.csi", sample = SAMPLES)
+        output:
+            RESULT_DIR + "all_variants.vcf.gz"
+        message: 
+            "Copying {input} to {output}"
+        threads: 10
+        shell:
+            "cp {input} {output}"
+else:
+    rule merge_variants:
+        input:
+            vcf = expand(RESULT_DIR + "vcf/{sample}.vcf.gz", sample = SAMPLES),
+            index = expand(RESULT_DIR + "vcf/{sample}.vcf.gz.csi", sample = SAMPLES)
+        output:
+            RESULT_DIR + "all_variants.vcf.gz"
+        message:
+            "Merging all VCF files"
+        threads: 10
+        shell:
+            "bcftools merge {input.vcf} -Oz --output {output}"
+
+rule index_variants:
+    input:
+        RESULT_DIR + "vcf/{sample}.vcf.gz"
+    output:
+        RESULT_DIR + "vcf/{sample}.vcf.gz.csi"
+    message:
+        "Compressing and indexing {wildcards.sample} VCF file."
+    threads: 10
+    shell:
+        "bcftools index {input}"  
+
+rule compress_variants:
+    input:
+        RESULT_DIR + "vcf/{sample}.vcf"
+    output:
+        RESULT_DIR + "vcf/{sample}.vcf.gz"
+    message:
+        "Compressing and indexing {wildcards.sample} VCF file."
+    threads: 10
+    shell:
+        "bgzip {input}"   
+
 rule call_variants:
     input:
         ref = config["refs"]["genome"],
@@ -133,7 +183,7 @@ rule call_variants:
 
 rule merge_bams:
     input:
-        expand(TEMP_DIR + "mapped/{{sample}}_{unit}.sorted.dedup.bam",unit=UNITS)
+        expand(TEMP_DIR + "mapped/{{sample}}_{unit}.sorted.fixed.sorted.dedup.bam",unit=UNITS)
     output:
         RESULT_DIR + "mapped/{sample}.bam"
     message:
@@ -147,31 +197,51 @@ rule merge_bams:
 ##########################################
 rule mark_duplicate:
     input:
-        TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam"
+        TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.bam"
     output:
-        TEMP_DIR + "mapped/{sample}_{unit}.sorted.dedup.bam"
+        TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.dedup.bam"
     message:
         "marking duplicates in {wildcards.sample} {wildcards.unit} bam file"
-    log:
-        RESULT_DIR + "logs/picard/{sample}.{unit}.metrics.txt"
+    threads: 10
     shell:
-        "picard MarkDuplicates "
-        "I={input} "
-        "O={output} "
-        "M={log} "
-        "REMOVE_DUPLICATES=false"
+        "samtools markdup -@ {threads} {input} {output}"
 
 
-rule samtools_sort:
+rule samtools_sort_by_coordinates:
+    input:
+        TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.bam"
+    output:
+       TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.bam"
+    message:
+        "sorting {wildcards.sample} {wildcards.unit} bam file by coordinate"
+    threads: 10
+    shell:
+        "samtools sort -@ {threads} {input} > {output}"
+
+rule samtools_fixmate:
+    input:
+        TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam"
+    output:
+        TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.bam"
+    message:
+        "Fixing mate in {wildcards.sample} {wildcards.unit} bam file"
+    threads: 10
+    shell:
+        "samtools fixmate -m -@ {threads} {input} {output}"
+
+
+rule samtools_sort_by_qname:
     input:
         TEMP_DIR + "mapped/{sample}_{unit}.bam"
     output:
         TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam"
-    message:"sorting {wildcards.sample} {wildcards.unit} bam file"
-    threads: 5
+    message:
+        "sorting {wildcards.sample} {wildcards.unit} bam file by read name (QNAME field)"
+    threads: 10
     shell:
-        "samtools sort -@ {threads} {input} > {output}"
+        "samtools sort -n -@ {threads} {input} > {output}"
  
+
 
 rule bwa_align:
     input:
