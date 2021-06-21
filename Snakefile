@@ -126,10 +126,12 @@ if len(SAMPLES) == 1: # only one sample
         output:
             RESULT_DIR + "all_variants.vcf.gz"
         message: 
-            "Copying {input} to {output}"
-        threads: 10
+            "Copying {input.vcf} to {params}"
+        threads: 1
+        params:
+            RESULT_DIR
         shell:
-            "cp {input} {output}"
+            "cp {input.vcf} {params}"
 else:
     rule merge_variants:
         input:
@@ -139,7 +141,7 @@ else:
             RESULT_DIR + "all_variants.vcf.gz"
         message:
             "Merging all VCF files"
-        threads: 10
+        threads: 1
         shell:
             "bcftools merge {input.vcf} -Oz --output {output}"
 
