@@ -128,10 +128,8 @@ if len(SAMPLES) == 1: # only one sample
         message: 
             "Copying {input.vcf} to {params}"
         threads: 1
-        params:
-            RESULT_DIR
         shell:
-            "cp {input.vcf} {params}"
+            "mv {input.vcf} {output}"
 else:
     rule merge_variants:
         input:
