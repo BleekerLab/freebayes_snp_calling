@@ -129,7 +129,7 @@ if len(SAMPLES) == 1: # only one sample
             "Copying {input.vcf} to {params}"
         threads: 1
         shell:
-            "mv {input.vcf} {output}"
+            "gzip -cd {input.vcf} > {output}"
 else:
     rule merge_variants:
         input:
