@@ -73,7 +73,7 @@ BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
     sample=SAMPLES,
     unit=UNITS)
 
-VCFs = expand(RESULT_DIR + "vcf/{sample}.vcf", sample=SAMPLES)
+#VCFs = expand(RESULT_DIR + "vcf/{sample}.vcf", sample=SAMPLES)
 GLOBAL_VCF  = RESULT_DIR + "all_variants.vcf.gz"
 
 if config["remove_workdir"]:
@@ -91,7 +91,6 @@ else:
         input:
             QC,
             BAMS,
-            VCFs,
             GLOBAL_VCF 
         message:"All done! Keeping temporary directory"
   
@@ -126,10 +125,10 @@ if len(SAMPLES) == 1: # only one sample
         output:
             RESULT_DIR + "all_variants.vcf.gz"
         message: 
-            "Copying {input.vcf} to {params}"
+            "Copying {input.vcf} to {output}"
         threads: 1
         shell:
-            "gzip -cd {input.vcf} > {output}"
+            "mv {input.vcf} {output}"
 else:
     rule merge_variants:
         input:
