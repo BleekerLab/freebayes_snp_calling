@@ -81,7 +81,6 @@ if config["remove_workdir"]:
         input:
             QC,
             BAMS,
-            VCFs,
             GLOBAL_VCF
         message:"all done! Cleaning working directory"
         shell:
