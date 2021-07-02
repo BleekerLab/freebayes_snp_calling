@@ -73,15 +73,17 @@ BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
     sample=SAMPLES,
     unit=UNITS)
 
-#VCFs = expand(RESULT_DIR + "vcf/{sample}.vcf", sample=SAMPLES)
 GLOBAL_VCF  = RESULT_DIR + "all_variants.vcf.gz"
+
+DEPTH = expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES)
 
 if config["remove_workdir"]:
     rule all:
         input:
             QC,
             BAMS,
-            GLOBAL_VCF
+            GLOBAL_VCF,
+            DEPTH
         message:"all done! Cleaning working directory"
         shell:
             "rm -r {TEMP_DIR}"
@@ -90,27 +92,27 @@ else:
         input:
             QC,
             BAMS,
-            GLOBAL_VCF 
+            GLOBAL_VCF,
+            DEPTH 
         message:"All done! Keeping temporary directory"
   
-###################
-# Save master files
-###################
-rule copy_master_files:
+####################
+# Compute statistics
+####################
+
+rule compute_bam_stats:
     input:
-        "Snakefile",
-        "config.yaml",
-        "units.tsv",
-        "environment.yaml"
+        expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES)
     output:
-        RESULT_DIR + "Snakefile",
-        RESULT_DIR + "config.yaml",
-        RESULT_DIR + "units.tsv",
-        RESULT_DIR + "environment.yaml"
+        RESULT_DIR + "stats/depth.tsv"
     message:
-        "copying master files"
+        "Computing the depth of sequencing coverage for {wildcards.sample}"
+    params:
+        prefix = "{sample}"
     shell:
-         "copy {input} {RESULT_DIR}"
+        "samtools depth - {output} {params.prefix} "
+
+
 
 ##########################
 # Call SNPs with freebayes
