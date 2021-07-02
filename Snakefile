@@ -55,11 +55,10 @@ def get_fastq(wildcards):
      return units.loc[(wildcards.sample, wildcards.unit), ["fq1","fq2"]].dropna()
 
 
-def merge_bams(wildcards):
-    "collects all bams files corresponding to the same library"
-    bam_files = glob(TEMP_DIR + "mapped/" + wildcards.sample + "_" + "L[0-9]+\.sorted.dedup.bam")
-    return bam_files
-
+#def merge_bams(wildcards):
+#    "collects all bams files corresponding to the same library"
+#    bam_files = glob(TEMP_DIR + "mapped/" + wildcards.sample + "_" + "L[0-9]+\.sorted.dedup.bam")
+#    return bam_files
 
 
 #################
@@ -100,17 +99,15 @@ else:
 # Compute statistics
 ####################
 
-rule compute_bam_stats:
+rule compute_read_depth:
     input:
-        expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES)
+        expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES) 
     output:
         RESULT_DIR + "stats/depth.tsv"
     message:
-        "Computing the depth of sequencing coverage for {wildcards.sample}"
-    params:
-        prefix = "{sample}"
+        "Computing the depth of sequencing coverage for all samples"
     shell:
-        "samtools depth - {output} {params.prefix} "
+        "samtools depth -o {output} {input} "
 
 
 
