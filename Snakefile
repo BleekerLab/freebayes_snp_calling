@@ -107,7 +107,7 @@ rule compute_read_depth:
     message:
         "Computing the depth of sequencing coverage for all samples"
     shell:
-        "samtools depth -o {output} {input} "
+        "samtools depth {input} > {output}"
 
 
 
