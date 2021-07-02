@@ -274,8 +274,8 @@ rule uncompress:
         forward = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
         reverse = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"
     output:
-        forward = temp(TEMP_DIR + "trimmed/{sample}_{unit}_forward.fastq"),
-        reverse = temp(TEMP_DIR + "trimmed/{sample}_{unit}_reverse.fastq")
+        forward = TEMP_DIR + "trimmed/{sample}_{unit}_forward.fastq",
+        reverse = TEMP_DIR + "trimmed/{sample}_{unit}_reverse.fastq"
     message:"uncompressing {wildcards.sample} {wildcards.unit} reads"
     run:
         if is_single_end(wildcards.sample, wildcards.unit):
