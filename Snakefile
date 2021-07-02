@@ -75,7 +75,7 @@ BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
 
 GLOBAL_VCF  = RESULT_DIR + "all_variants.vcf.gz"
 
-DEPTH = expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES)
+DEPTH = RESULT_DIR + "stats/depth.tsv"
 
 if config["remove_workdir"]:
     rule all:
