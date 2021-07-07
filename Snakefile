@@ -136,7 +136,7 @@ rule index_variants:
         RESULT_DIR + "vcf/{sample}.vcf.gz.csi"
     message:
         "Compressing and indexing {wildcards.sample} VCF file."
-    threads: 10
+    threads: 4
     shell:
         "bcftools index {input}"  
 
@@ -147,7 +147,7 @@ rule compress_variants:
         RESULT_DIR + "vcf/{sample}.vcf.gz"
     message:
         "Compressing and indexing {wildcards.sample} VCF file."
-    threads: 10
+    threads: 4
     shell:
         "bgzip {input}"   
 
@@ -159,7 +159,7 @@ rule call_variants:
         RESULT_DIR + "vcf/{sample}.vcf"
     message:
         "calling variants for {wildcards.sample}"
-    threads: 10
+    threads: 4
     shell:
         "freebayes -f {input.ref} {input.bam} > {output}"   
 
@@ -213,7 +213,7 @@ rule mark_duplicate:
         temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.dedup.bam")
     message:
         "marking duplicates in {wildcards.sample} {wildcards.unit} bam file"
-    threads: 10
+    threads: 4
     shell:
         "samtools markdup -@ {threads} {input} {output}"
 
@@ -225,7 +225,7 @@ rule samtools_sort_by_coordinates:
        temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.bam")
     message:
         "sorting {wildcards.sample} {wildcards.unit} bam file by coordinate"
-    threads: 10
+    threads: 4
     shell:
         "samtools sort -@ {threads} {input} > {output}"
 
@@ -236,7 +236,7 @@ rule samtools_fixmate:
         temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.bam")
     message:
         "Fixing mate in {wildcards.sample} {wildcards.unit} bam file"
-    threads: 10
+    threads: 4
     shell:
         "samtools fixmate -m -@ {threads} {input} {output}"
 
@@ -248,7 +248,7 @@ rule samtools_sort_by_qname:
         temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam")
     message:
         "sorting {wildcards.sample} {wildcards.unit} bam file by read name (QNAME field)"
-    threads: 10
+    threads: 4
     shell:
         "samtools sort -n -@ {threads} {input} > {output}"
 
@@ -263,7 +263,7 @@ rule bwa_align:
     message:"mapping {wildcards.sample} {wildcards.unit} reads to genomic reference"
     params:
         db_prefix = TEMP_DIR + "index/genome"
-    threads: 10
+    threads: 4
     run:
         # Building the read group id (sequencer_id + flowcell_name + lane_number + barcode)
         SEQUENCER_ID=check_output("head -n 1 " + input.forward + " |cut -d: -f1",shell=True).decode().strip()
@@ -338,7 +338,7 @@ rule fastp:
         json = TEMP_DIR + "fastp/{sample}_{unit}_fastp.json"
     message:
         "trimming {wildcards.sample} reads from {wildcards.unit}"
-    threads: 10
+    threads: 4
     log:
         RESULT_DIR + "fastp/{sample}_{unit}.log.txt"
     params:
