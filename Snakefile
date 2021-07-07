@@ -64,9 +64,7 @@ def get_fastq(wildcards):
 #################
 # Desired output
 #################
-QC = expand(RESULT_DIR + "fastp/{sample}_{unit}.html", 
-    sample=SAMPLES, 
-    unit=UNITS)
+QC = RESULT_DIR + "multiqc_report.html"
 
 BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
     sample=SAMPLES,
@@ -300,15 +298,31 @@ rule bwa_index:
 ####################
 # QC + trimming
 ####################
+rule multiqc:
+    input:
+        expand(TEMP_DIR + "fastp/{sample}_{unit}_fastp.json", sample = SAMPLES, unit = UNITS)
+    output:
+        RESULT_DIR + "multiqc_report.html"
+    params:
+        fastp_directory = TEMP_DIR + "fastp/",
+        outdir = RESULT_DIR
+    message: "Summarising fastp reports with multiqc"
+    shell:
+        "multiqc --force "
+        "--outdir {params.outdir} "
+        "{params.fastp_directory} "
+
+
 rule fastp:
     input:
         get_fastq
     output:
         fq1  = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
         fq2  = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz",
-        html = RESULT_DIR + "fastp/{sample}_{unit}.html",
-        json = RESULT_DIR + "fastp/{sample}_{unit}.json"
-    message:"trimming {wildcards.sample} reads from {wildcards.unit}"
+        html = TEMP_DIR + "fastp/{sample}_{unit}_fastp.html",
+        json = TEMP_DIR + "fastp/{sample}_{unit}_fastp.json"
+    message:
+        "trimming {wildcards.sample} reads from {wildcards.unit}"
     threads: 10
     log:
         RESULT_DIR + "fastp/{sample}_{unit}.log.txt"
