@@ -210,7 +210,7 @@ rule mark_duplicate:
     input:
         TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.bam"
     output:
-        TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.dedup.bam"
+        temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.dedup.bam")
     message:
         "marking duplicates in {wildcards.sample} {wildcards.unit} bam file"
     threads: 10
@@ -222,7 +222,7 @@ rule samtools_sort_by_coordinates:
     input:
         TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.bam"
     output:
-       TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.bam"
+       temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.sorted.bam")
     message:
         "sorting {wildcards.sample} {wildcards.unit} bam file by coordinate"
     threads: 10
@@ -233,7 +233,7 @@ rule samtools_fixmate:
     input:
         TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam"
     output:
-        TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.bam"
+        temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.fixed.bam")
     message:
         "Fixing mate in {wildcards.sample} {wildcards.unit} bam file"
     threads: 10
@@ -245,7 +245,7 @@ rule samtools_sort_by_qname:
     input:
         TEMP_DIR + "mapped/{sample}_{unit}.bam"
     output:
-        TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam"
+        temp(TEMP_DIR + "mapped/{sample}_{unit}.sorted.bam")
     message:
         "sorting {wildcards.sample} {wildcards.unit} bam file by read name (QNAME field)"
     threads: 10
@@ -284,8 +284,8 @@ rule uncompress:
         forward = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
         reverse = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"
     output:
-        forward = TEMP_DIR + "trimmed/{sample}_{unit}_forward.fastq",
-        reverse = TEMP_DIR + "trimmed/{sample}_{unit}_reverse.fastq"
+        forward = temp(TEMP_DIR + "trimmed/{sample}_{unit}_forward.fastq"),
+        reverse = temp(TEMP_DIR + "trimmed/{sample}_{unit}_reverse.fastq")
     message:"uncompressing {wildcards.sample} {wildcards.unit} reads"
     run:
         if is_single_end(wildcards.sample, wildcards.unit):
@@ -332,8 +332,8 @@ rule fastp:
     input:
         get_fastq
     output:
-        fq1  = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz",
-        fq2  = TEMP_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz",
+        fq1  = temp(TEMP_DIR + "trimmed/" + "{sample}_{unit}_R1_trimmed.fq.gz"),
+        fq2  = temp(TEMP_DIR + "trimmed/" + "{sample}_{unit}_R2_trimmed.fq.gz"),
         html = TEMP_DIR + "fastp/{sample}_{unit}_fastp.html",
         json = TEMP_DIR + "fastp/{sample}_{unit}_fastp.json"
     message:
