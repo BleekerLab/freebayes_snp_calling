@@ -70,9 +70,12 @@ BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
     sample=SAMPLES,
     unit=UNITS)
 
-GLOBAL_VCF  = RESULT_DIR + "all_variants.vcf.gz"
+BAM_STATS = [
+  RESULT_DIR + "stats/depth.tsv",
+  expand(RESULT_DIR + "stats/{sample}.stats.txt", sample = SAMPLES)
+]
 
-DEPTH = RESULT_DIR + "stats/depth.tsv"
+GLOBAL_VCF  = RESULT_DIR + "all_variants.vcf.gz"
 
 if config["remove_workdir"]:
     rule all:
@@ -80,7 +83,7 @@ if config["remove_workdir"]:
             QC,
             BAMS,
             GLOBAL_VCF,
-            DEPTH
+            BAM_STATS
         message:"all done! Cleaning working directory"
         shell:
             "rm -r {TEMP_DIR}"
@@ -90,22 +93,10 @@ else:
             QC,
             BAMS,
             GLOBAL_VCF,
-            DEPTH 
+            BAM_STATS 
         message:"All done! Keeping temporary directory"
   
-####################
-# Compute statistics
-####################
 
-rule compute_read_depth:
-    input:
-        expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES) 
-    output:
-        RESULT_DIR + "stats/depth.tsv"
-    message:
-        "Computing the depth of sequencing coverage for all samples"
-    shell:
-        "samtools depth {input} > {output}"
 
 
 
@@ -172,6 +163,31 @@ rule call_variants:
     shell:
         "freebayes -f {input.ref} {input.bam} > {output}"   
 
+#################################
+# Compute read mapping statistics
+#################################
+
+rule samtools_stats:
+    input: 
+        RESULT_DIR + "mapped/{sample}.bam"
+    output:
+        RESULT_DIR + "stats/{sample}.stats.txt"
+    message:
+        "Computing statistics from {wildcards.sample} BAM file"
+    shell:
+        "samtools stats {input} > {output}"
+
+rule compute_read_depth:
+    input:
+        expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES) 
+    output:
+        RESULT_DIR + "stats/depth.tsv"
+    message:
+        "Computing the depth of sequencing coverage for all samples"
+    shell:
+        "samtools depth {input} > {output}"
+
+
 ##############################
 # Merge BAMs from same library
 ##############################
@@ -235,7 +251,6 @@ rule samtools_sort_by_qname:
     threads: 10
     shell:
         "samtools sort -n -@ {threads} {input} > {output}"
- 
 
 
 rule bwa_align:
