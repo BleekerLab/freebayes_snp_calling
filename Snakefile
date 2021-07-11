@@ -70,10 +70,11 @@ BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
     sample=SAMPLES,
     unit=UNITS)
 
-BAM_STATS = [
+STATS = [
   RESULT_DIR + "stats/depth.tsv",
   expand(RESULT_DIR + "stats/{sample}.stats.txt", sample = SAMPLES),
-  expand(RESULT_DIR + "stats/genome_chromosome_length.txt", sample = SAMPLES)
+  RESULT_DIR + "stats/genome_chromosome_length.txt",
+  expand(RESULT_DIR + "stats/{sample}.bigwig", sample = SAMPLES)
 ]
 
 GLOBAL_VCF  = RESULT_DIR + "all_variants.vcf.gz"
@@ -84,7 +85,7 @@ if config["remove_workdir"]:
             QC,
             BAMS,
             GLOBAL_VCF,
-            BAM_STATS
+            STATS
         message:"all done! Cleaning working directory"
         shell:
             "rm -r {TEMP_DIR}"
@@ -94,7 +95,7 @@ else:
             QC,
             BAMS,
             GLOBAL_VCF,
-            BAM_STATS 
+            STATS 
         message:"All done! Keeping temporary directory"
   
 
@@ -182,6 +183,9 @@ rule genome_coverage_bigwig:
         "--binSize {params.bin_size} "
         "-o {output}"
 
+
+
+
 rule compute_chromosome_length:
     input:
         config["refs"]["genome"]
@@ -190,7 +194,7 @@ rule compute_chromosome_length:
     message:
         "Computing genome chromosome lengths"
     shell:
-        "bash compute_chr_length_from_genome_fasta.sh {input} {output}"
+        "bash scripts/compute_chr_length_from_genome_fasta.sh {input} {output}"
 
 rule samtools_stats:
     input: 
@@ -219,13 +223,15 @@ rule compute_read_depth:
 
 rule merge_bams:
     input:
-        expand(TEMP_DIR + "mapped/{{sample}}_{unit}.sorted.fixed.sorted.dedup.bam",unit=UNITS)
+        expand(TEMP_DIR + "mapped/{{sample}}_{unit}.sorted.fixed.sorted.dedup.bam", unit=UNITS)
     output:
-        RESULT_DIR + "mapped/{sample}.bam"
+        bam = RESULT_DIR + "mapped/{sample}.bam",
+        bai = RESULT_DIR + "mapped/{sample}.bam.bai",
     message:
         "merging all BAM files for {wildcards.sample}"
     shell:
-        "samtools merge {output} {input}"
+        "samtools merge {output.bam} {input};"
+        "samtools index {output.bam}"
 
 
 ##########################################
