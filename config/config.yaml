@@ -1,7 +1,7 @@
 ---
-tempdir: "temp/"                # where to store temporary files like trimmed fastq files
+tempdir: "temp/"                  # where to store temporary files like trimmed fastq files
 remove_workdir: FALSE             # turn to FALSE to remove it at the end of the analysis 
-resultdir: "results/"            # directory with all results
+resultdir: "results/"             # directory with all results
 
 
 
@@ -10,12 +10,12 @@ units: "config/units.tsv"
         
 # read quality trimming
 fastp:
-  qualified_quality_phred: 30         # Phred+33 score (> 15 for Proton Ion, > 30 or more for Illumina) 
-  maximum_length:          150        # global trimming option to a specified maximum length. Same for both paired reads.
+  qualified_quality_phred: 30     # Phred+33 score (> 15 for Proton Ion, > 30 or more for Illumina) 
+  maximum_length:          150    # Global trimming option to a specified maximum length. Same for both paired reads.
 
 # Genome statistics
 deeptools:
-  binsize: 100000 
+  binsize: 100000                 # Smaller binsize results in large output file and better genome resolution.   
 
 
 ## Genome reference assembly

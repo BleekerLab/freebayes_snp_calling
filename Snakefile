@@ -75,7 +75,10 @@ STATS = [
   expand(RESULT_DIR + "stats/{sample}.bigwig", sample = SAMPLES)
 ]
 
-GLOBAL_VCF  = RESULT_DIR + "all_variants.vcf.gz"
+GLOBAL_VCF  = [
+  RESULT_DIR + "freebayes_variants.vcf.gz",
+  RESULT_DIR + "samtools_variants.vcf.gz"
+  ]
 
 if config["remove_workdir"]:
     rule all:
@@ -95,9 +98,23 @@ else:
             GLOBAL_VCF,
             STATS 
         message:"All done! Keeping temporary directory"
-  
 
 
+#########################
+# Call SNPs with samtools 
+#########################
+rule samtool_pileup:
+    input:
+        expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES)
+    output:
+        RESULT_DIR + "samtools_variants.vcf.gz"
+    message:
+        "Calling variants with samtools"
+    params:
+        genome = config["refs"]["genome"]
+    shell:
+        "samtools mpileup -uf {params.genome} {input} |"
+        "bcftools call -m --variants-only --output-type z > {output}"  
 
 
 ##########################
@@ -110,7 +127,7 @@ if len(SAMPLES) == 1: # only one sample
             vcf = expand(RESULT_DIR + "vcf/{sample}.vcf.gz", sample = SAMPLES),
             index = expand(RESULT_DIR + "vcf/{sample}.vcf.gz.csi", sample = SAMPLES)
         output:
-            RESULT_DIR + "all_variants.vcf.gz"
+            RESULT_DIR + "freebayes_variants.vcf.gz"
         message: 
             "Copying {input.vcf} to {output}"
         threads: 1
@@ -122,7 +139,7 @@ else:
             vcf = expand(RESULT_DIR + "vcf/{sample}.vcf.gz", sample = SAMPLES),
             index = expand(RESULT_DIR + "vcf/{sample}.vcf.gz.csi", sample = SAMPLES)
         output:
-            RESULT_DIR + "all_variants.vcf.gz"
+            RESULT_DIR + "freebayes_variants.vcf.gz"
         message:
             "Merging all VCF files"
         threads: 1
@@ -178,6 +195,7 @@ rule genome_coverage_bigwig:
         bin_size = config["deeptools"]["binsize"]
     shell:
         "bamCoverage -b {input} "
+        "--outFileFormat 'bigwig' "
         "--binSize {params.bin_size} "
         "-o {output}"
 
