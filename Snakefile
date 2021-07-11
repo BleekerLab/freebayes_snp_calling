@@ -112,9 +112,10 @@ rule samtool_pileup:
         "Calling variants with samtools"
     params:
         genome = config["refs"]["genome"]
+    threads: 8
     shell:
-        "samtools mpileup -uf {params.genome} {input} |"
-        "bcftools call -m --variants-only --output-type z > {output}"  
+        "samtools mpileup -u --fasta-ref {params.genome} {input} |"
+        "bcftools call --threads {threads} --multiallelic-caller --variants-only --output-type z > {output}"  
 
 
 ##########################
