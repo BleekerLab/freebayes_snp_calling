@@ -72,7 +72,8 @@ BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
 
 BAM_STATS = [
   RESULT_DIR + "stats/depth.tsv",
-  expand(RESULT_DIR + "stats/{sample}.stats.txt", sample = SAMPLES)
+  expand(RESULT_DIR + "stats/{sample}.stats.txt", sample = SAMPLES),
+  expand(RESULT_DIR + "stats/genome_chromosome_length.txt", sample = SAMPLES)
 ]
 
 GLOBAL_VCF  = RESULT_DIR + "all_variants.vcf.gz"
@@ -166,6 +167,30 @@ rule call_variants:
 #################################
 # Compute read mapping statistics
 #################################
+
+rule genome_coverage_bigwig:
+    input:
+        RESULT_DIR + "mapped/{sample}.bam"
+    output:
+        RESULT_DIR + "stats/{sample}.bigwig"
+    message:
+        "Computing genome coverage for {wildcards.sample}"
+    params:
+        bin_size = config["deeptools"]["binsize"]
+    shell:
+        "bamCoverage -b {input} "
+        "--binSize {params.bin_size} "
+        "-o {output}"
+
+rule compute_chromosome_length:
+    input:
+        config["refs"]["genome"]
+    output:
+        RESULT_DIR + "stats/genome_chromosome_length.txt"
+    message:
+        "Computing genome chromosome lengths"
+    shell:
+        "bash compute_chr_length_from_genome_fasta.sh {input} {output}"
 
 rule samtools_stats:
     input: 
