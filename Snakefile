@@ -71,9 +71,7 @@ BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
     unit=UNITS)
 
 STATS = [
-  RESULT_DIR + "stats/depth.tsv",
   expand(RESULT_DIR + "stats/{sample}.stats.txt", sample = SAMPLES),
-  RESULT_DIR + "stats/genome_chromosome_length.txt",
   expand(RESULT_DIR + "stats/{sample}.bigwig", sample = SAMPLES)
 ]
 
@@ -183,19 +181,6 @@ rule genome_coverage_bigwig:
         "--binSize {params.bin_size} "
         "-o {output}"
 
-
-
-
-rule compute_chromosome_length:
-    input:
-        config["refs"]["genome"]
-    output:
-        RESULT_DIR + "stats/genome_chromosome_length.txt"
-    message:
-        "Computing genome chromosome lengths"
-    shell:
-        "bash scripts/compute_chr_length_from_genome_fasta.sh {input} {output}"
-
 rule samtools_stats:
     input: 
         RESULT_DIR + "mapped/{sample}.bam"
@@ -205,17 +190,6 @@ rule samtools_stats:
         "Computing statistics from {wildcards.sample} BAM file"
     shell:
         "samtools stats {input} > {output}"
-
-rule compute_read_depth:
-    input:
-        expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES) 
-    output:
-        RESULT_DIR + "stats/depth.tsv"
-    message:
-        "Computing the depth of sequencing coverage for all samples"
-    shell:
-        "samtools depth {input} > {output}"
-
 
 ##############################
 # Merge BAMs from same library
