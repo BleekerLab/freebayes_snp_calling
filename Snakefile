@@ -72,7 +72,8 @@ BAMS = expand(TEMP_DIR + "mapped/{sample}_{unit}.bam",
 
 STATS = [
   expand(RESULT_DIR + "stats/{sample}.stats.txt", sample = SAMPLES),
-  expand(RESULT_DIR + "stats/{sample}.bigwig", sample = SAMPLES)
+  expand(RESULT_DIR + "stats/{sample}.bigwig", sample = SAMPLES),
+  RESULT_DIR + "stats/genome_coverage_depth.tsv"
 ]
 
 GLOBAL_VCF  = [
@@ -184,6 +185,18 @@ rule call_variants:
 #################################
 # Compute read mapping statistics
 #################################
+rule read_depth_per_genome_position:
+    input:
+        expand(RESULT_DIR + "mapped/{sample}.bam", sample = SAMPLES)
+    output:
+        RESULT_DIR + "stats/genome_coverage_depth.tsv"
+    message:
+        "Computing genome coverage depth for all samples"
+    params:
+    shell:
+        "samtools depth -H " # write column names
+        "-o {output} "
+        "{input}"
 
 rule genome_coverage_bigwig:
     input:
