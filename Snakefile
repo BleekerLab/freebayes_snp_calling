@@ -194,9 +194,7 @@ rule read_depth_per_genome_position:
         "Computing genome coverage depth for all samples"
     params:
     shell:
-        "samtools depth " 
-        "-o {output} "
-        "{input}"
+        "samtools depth {input} > {output}"
 
 rule genome_coverage_bigwig:
     input:
